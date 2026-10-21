@@ -1,0 +1,66 @@
+/* Mobile overrides for inline-styled pages */
+/* Injected via <style> in index.html — supplements index.css */
+
+@media (max-width: 768px) {
+
+  /* ── CatalogPage: stack sidebar + collapse catalog grid ── */
+  /* The catalog uses a flex row with 220px sidebar */
+  /* We target the parent flex container */
+  .renew-catalog-layout {
+    flex-direction: column !important;
+  }
+  .renew-catalog-sidebar {
+    width: 100% !important;
+    min-height: unset !important;
+    padding: 20px 16px !important;
+  }
+  .renew-catalog-sidebar-inner {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  .renew-catalog-grid {
+    padding: 16px !important;
+  }
+  .renew-catalog-grid-inner {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  /* ── ProductDetailPage: stack two-col ── */
+  .renew-product-layout {
+    flex-direction: column !important;
+    padding: 24px 16px !important;
+  }
+  .renew-product-image-col {
+    width: 100% !important;
+  }
+  .renew-product-info-col {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  /* ── ConfirmationPage: tracker scroll ── */
+  .renew-tracker-wrap {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .renew-tracker-grid {
+    min-width: 420px !important;
+  }
+
+  /* ── ConfirmationPage: single column cards ── */
+  .renew-confirm-cards {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .renew-catalog-grid-inner {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+  .renew-product-layout {
+    padding: 16px 12px !important;
+  }
+}
