@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { useCart } from '../context/CartContext'
-import { formatPrice } from '../data/products'
+import { formatPrice, carbonFor } from '../data/products'
 
 const SHIPPING = 0 // Free shipping
 const ESTIMATED_TAX = 0 // Included in price
@@ -12,6 +12,8 @@ export default function CartPage() {
   const { state, removeItem, updateQty, subtotal, totalItems } = useCart()
 
   const total = subtotal + SHIPPING
+  const totalFootprint = state.items.reduce((sum, i) => sum + carbonFor(i.id).footprint * i.quantity, 0)
+  const totalSaved = state.items.reduce((sum, i) => sum + carbonFor(i.id).saved * i.quantity, 0)
 
   return (
     <>
@@ -102,6 +104,10 @@ export default function CartPage() {
                         <p className="cart-item__variant">
                           Colour: {item.colour} · {formatPrice(item.price)} each
                         </p>
+                        <p className="cart-item__carbon">
+                          🌿 {carbonFor(item.id).footprint * item.quantity} kg CO₂e · saves{' '}
+                          {carbonFor(item.id).saved * item.quantity} kg vs. conventional
+                        </p>
 
                         {/* Qty controls */}
                         <div className="cart-item__qty" role="group" aria-label={`Quantity for ${item.name}`}>
@@ -175,6 +181,14 @@ export default function CartPage() {
                   <div className="cart-summary__row">
                     <span>Estimated tax</span>
                     <span>Included</span>
+                  </div>
+                  <div className="cart-summary__row">
+                    <span>Carbon footprint</span>
+                    <span>{totalFootprint} kg CO₂e</span>
+                  </div>
+                  <div className="cart-summary__row">
+                    <span>Carbon saved</span>
+                    <span style={{ fontWeight: 600 }}>🌿 {totalSaved} kg CO₂e</span>
                   </div>
                   <div className="cart-summary__row cart-summary__row--total">
                     <span>Total</span>
