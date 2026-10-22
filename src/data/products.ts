@@ -119,3 +119,19 @@ export function formatPrice(amount: number): string {
     maximumFractionDigits: 0,
   }).format(amount)
 }
+
+// Carbon data, kg CO2e per unit. PLACEHOLDER VALUES: replace with your real figures.
+// footprint = ReNew product; baseline = typical conventional equivalent.
+export const CARBON: Record<string, { footprint: number; baseline: number }> = {
+  'noma-chair':        { footprint: 9,   baseline: 32 },
+  'vale-dining-table': { footprint: 85,  baseline: 210 },
+  'ren-bench':         { footprint: 28,  baseline: 70 },
+  'sol-side-table':    { footprint: 40,  baseline: 110 },
+  'arc-shelf':         { footprint: 55,  baseline: 140 },
+  'loom-sofa':         { footprint: 120, baseline: 310 },
+}
+
+export function carbonFor(id: string) {
+  const c = CARBON[id] ?? { footprint: 0, baseline: 0 }
+  return { footprint: c.footprint, saved: Math.max(c.baseline - c.footprint, 0) }
+}
