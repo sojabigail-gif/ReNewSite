@@ -4,6 +4,9 @@ import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { useCart } from '../context/CartContext'
 import { formatPrice } from '../data/products'
+import {
+  validateEmail, validateName, validateStreet, validateCity, validatePostal,
+} from '../data/validators'
 
 interface ContactForm {
   email: string
@@ -24,6 +27,17 @@ interface FormErrors {
   city?: string
   postal?: string
 }
+
+// Order matters: the first invalid field in this list gets keyboard focus on submit.
+const FIELD_IDS: Record<keyof FormErrors, string> = {
+  email: 'checkout-email',
+  firstName: 'checkout-firstname',
+  lastName: 'checkout-lastname',
+  street: 'checkout-street',
+  city: 'checkout-city',
+  postal: 'checkout-postal',
+}
+const FIELDS = Object.keys(FIELD_IDS) as (keyof FormErrors)[]
 
 const PAYMENT_METHODS = [
   { id: 'card', label: 'Card', sub: 'Visa, Mastercard, Rupay' },
@@ -46,18 +60,32 @@ export default function CheckoutPage() {
 
   const total = subtotal // free shipping, tax included
 
+  function fieldError(field: keyof FormErrors): string | undefined {
+    switch (field) {
+      case 'email':     return validateEmail(contact.email)
+      case 'firstName': return validateName(address.firstName, 'First name')
+      case 'lastName':  return validateName(address.lastName, 'Last name')
+      case 'street':    return validateStreet(address.street)
+      case 'city':      return validateCity(address.city)
+      case 'postal':    return validatePostal(address.postal, address.country)
+    }
+  }
+
+  // Show a field's error as soon as the user leaves it
+  function handleBlur(field: keyof FormErrors) {
+    setErrors((p) => ({ ...p, [field]: fieldError(field) }))
+  }
+
   function validate(): boolean {
     const e: FormErrors = {}
-    if (!contact.email.trim() || !/\S+@\S+\.\S+/.test(contact.email))
-      e.email = 'Enter a valid email address'
-    if (!address.firstName.trim()) e.firstName = 'Required'
-    if (!address.lastName.trim()) e.lastName = 'Required'
-    if (!address.street.trim()) e.street = 'Required'
-    if (!address.city.trim()) e.city = 'Required'
-    if (!address.postal.trim() || !/^\d{6}$/.test(address.postal.trim()))
-      e.postal = 'Enter a valid 6-digit postal code'
+    for (const f of FIELDS) {
+      const msg = fieldError(f)
+      if (msg) e[f] = msg
+    }
     setErrors(e)
-    return Object.keys(e).length === 0
+    const first = FIELDS.find((f) => e[f])
+    if (first) document.getElementById(FIELD_IDS[first])?.focus()
+    return !first
   }
 
   function handlePlaceOrder(e: React.FormEvent) {
@@ -76,7 +104,7 @@ export default function CheckoutPage() {
       subtotal,
       total,
       address: { ...address },
-      email: contact.email,
+      email: contact.email.trim().toLowerCase(),
       payment,
       estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', {
         day: 'numeric', month: 'short', year: 'numeric',
@@ -140,6 +168,10 @@ export default function CheckoutPage() {
                         if (errors.email) setErrors((p) => ({ ...p, email: undefined }))
                       }}
                       autoComplete="email"
+                      inputMode="email"
+                      maxLength={254}
+                      spellCheck={false}
+                      onBlur={() => handleBlur('email')}
                     />
                     {errors.email && <span className="form-error">{errors.email}</span>}
                   </div>
@@ -166,6 +198,7 @@ export default function CheckoutPage() {
                             if (errors.firstName) setErrors((p) => ({ ...p, firstName: undefined }))
                           }}
                           autoComplete="given-name"
+                          onBlur={() => handleBlur('firstName')}
                         />
                         {errors.firstName && <span className="form-error">{errors.firstName}</span>}
                       </div>
@@ -182,6 +215,7 @@ export default function CheckoutPage() {
                             if (errors.lastName) setErrors((p) => ({ ...p, lastName: undefined }))
                           }}
                           autoComplete="family-name"
+                          onBlur={() => handleBlur('lastName')}
                         />
                         {errors.lastName && <span className="form-error">{errors.lastName}</span>}
                       </div>
@@ -200,6 +234,7 @@ export default function CheckoutPage() {
                           if (errors.street) setErrors((p) => ({ ...p, street: undefined }))
                         }}
                         autoComplete="street-address"
+                        onBlur={() => handleBlur('street')}
                       />
                       {errors.street && <span className="form-error">{errors.street}</span>}
                     </div>
@@ -218,6 +253,7 @@ export default function CheckoutPage() {
                             if (errors.city) setErrors((p) => ({ ...p, city: undefined }))
                           }}
                           autoComplete="address-level2"
+                          onBlur={() => handleBlur('city')}
                         />
                         {errors.city && <span className="form-error">{errors.city}</span>}
                       </div>
@@ -229,12 +265,13 @@ export default function CheckoutPage() {
                           className={`form-input${errors.postal ? ' error' : ''}`}
                           placeholder="400001"
                           value={address.postal}
-                          maxLength={6}
+                          maxLength={10}
                           onChange={(e) => {
                             setAddress((p) => ({ ...p, postal: e.target.value }))
                             if (errors.postal) setErrors((p) => ({ ...p, postal: undefined }))
                           }}
                           autoComplete="postal-code"
+                          onBlur={() => handleBlur('postal')}
                         />
                         {errors.postal && <span className="form-error">{errors.postal}</span>}
                       </div>
@@ -246,7 +283,10 @@ export default function CheckoutPage() {
                         id="checkout-country"
                         className="form-input"
                         value={address.country}
-                        onChange={(e) => setAddress((p) => ({ ...p, country: e.target.value }))}
+                        onChange={(e) => {
+                          setAddress((p) => ({ ...p, country: e.target.value }))
+                          setErrors((p) => ({ ...p, postal: undefined }))
+                        }}
                         autoComplete="country-name"
                         style={{ cursor: 'pointer' }}
                       >
